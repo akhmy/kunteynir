@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/akhmy/kunteynir/internal/container"
 )
@@ -15,10 +14,7 @@ type RunCommand struct {
 }
 
 func (c *RunCommand) Execute() error {
-	err := container.Run(c.LowerDir, c.Command)
-	if err != nil {
-		return fmt.Errorf("run command: %w", err)
-	}
+	container.Run(c.LowerDir, c.Command)
 
 	return nil
 }
