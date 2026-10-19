@@ -14,9 +14,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	factory := &cli.CommandFactory{}
-
-	cmd, err := factory.New(os.Args[1], os.Args[2:]...)
+	cmd, err := cli.NewCommand(os.Args[1], os.Args[2:]...)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(2)

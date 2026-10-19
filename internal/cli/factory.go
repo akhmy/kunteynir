@@ -1,17 +1,9 @@
 package cli
 
-import (
-	"io"
-)
+import "os"
 
 type Command interface {
 	Execute() error
-}
-
-type CommandFactory struct {
-	In  io.Writer
-	Out io.Writer
-	Err io.Writer
 }
 
 type UnknownCommandError struct {
@@ -22,10 +14,10 @@ func (e *UnknownCommandError) Error() string {
 	return "unknown command: " + e.Command
 }
 
-func (cf *CommandFactory) New(cmd string, args ...string) (Command, error) {
+func NewCommand(cmd string, args ...string) (Command, error) {
 	switch cmd {
 	case "help":
-		return &UsageCommand{Out: cf.Out}, nil
+		return &UsageCommand{Out: os.Stdout}, nil
 	case "run":
 		if len(args) != 2 {
 			return nil, ErrRunUsage
