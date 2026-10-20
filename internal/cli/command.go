@@ -23,11 +23,6 @@ func NewCommand(cmd string, args ...string) (Command, error) {
 			return nil, ErrRunUsage
 		}
 		return &RunCommand{LowerDir: args[0], Command: args[1]}, nil
-	case "init":
-		if len(args) != 2 {
-			return nil, ErrInitUsage
-		}
-		return &InitCommand{LowerDir: args[0], Command: args[1]}, nil
 	default:
 		return nil, &UnknownCommandError{Command: cmd}
 	}
