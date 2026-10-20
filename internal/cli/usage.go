@@ -6,11 +6,15 @@ import (
 )
 
 type UsageCommand struct {
-	Out io.Writer
+	out io.Writer
+}
+
+func NewUsageCommand(out io.Writer) (*UsageCommand, error) {
+	return &UsageCommand{out: out}, nil
 }
 
 func (c *UsageCommand) Execute() error {
-	fmt.Fprintln(c.Out, "usage: kunteynir <command>")
+	fmt.Fprintln(c.out, "usage: kunteynir <command>")
 
 	return nil
 }

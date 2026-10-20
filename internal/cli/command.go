@@ -1,6 +1,10 @@
 package cli
 
-import "os"
+import (
+	"errors"
+	"fmt"
+	"os"
+)
 
 type Command interface {
 	Execute() error
@@ -11,19 +15,22 @@ type UnknownCommandError struct {
 }
 
 func (e *UnknownCommandError) Error() string {
-	return "unknown command: " + e.Command
+	return fmt.Sprintf("unknown command %q", e.Command)
 }
 
-func NewCommand(cmd string, args ...string) (Command, error) {
-	switch cmd {
+var ErrNoCommand = errors.New("no command")
+
+func NewCommand(args []string) (Command, error) {
+	if len(args) == 0 {
+		return nil, ErrNoCommand
+	}
+
+	switch args[0] {
 	case "help":
-		return &UsageCommand{Out: os.Stdout}, nil
+		return NewUsageCommand(os.Stdout)
 	case "run":
-		if len(args) != 2 {
-			return nil, ErrRunUsage
-		}
-		return &RunCommand{LowerDir: args[0], Command: args[1]}, nil
+		return NewRunCommand(args[1:])
 	default:
-		return nil, &UnknownCommandError{Command: cmd}
+		return nil, &UnknownCommandError{Command: args[0]}
 	}
 }
