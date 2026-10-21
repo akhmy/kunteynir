@@ -18,11 +18,11 @@ func main() {
 		os.Exit(2)
 	}
 
-	if os.Args[1] == "init" {
+	if os.Args[1] == "setup" {
 		pipe := os.NewFile(3, "init-error-pipe")
 		syscall.CloseOnExec(3)
 
-		cmd, err := cli.NewInitCommand(os.Args[2:])
+		cmd, err := cli.NewSetupCommand(os.Args[2:])
 		if err != nil {
 			reportInitError(pipe, err)
 			os.Exit(2)

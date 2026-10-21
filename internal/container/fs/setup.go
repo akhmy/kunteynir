@@ -1,12 +1,35 @@
-package container
+package fs
 
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"syscall"
 )
+
+func Setup(lowerDir string) error {
+	if err := syscall.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, ""); err != nil {
+		return fmt.Errorf("make mounts private: %w", err)
+	}
+
+	if err := setupRootFS(lowerDir); err != nil {
+		return fmt.Errorf("set up root fs: %w", err)
+	}
+
+	if err := setupPseudoFS(); err != nil {
+		return fmt.Errorf("set up pseudo fs: %w", err)
+	}
+
+	if err := setupDevices(); err != nil {
+		return fmt.Errorf("set up devices: %w", err)
+	}
+
+	if err := setupSymlinks(); err != nil {
+		return fmt.Errorf("set up symlinks: %w", err)
+	}
+
+	return nil
+}
 
 const (
 	tempDir   = "/tmp"
@@ -20,42 +43,7 @@ const (
 	oldRoot = "/.oldroot"
 )
 
-func Init(lowerDir, hostname string, args []string) error {
-	err := syscall.Mount(
-		"", "/", "",
-		syscall.MS_PRIVATE|syscall.MS_REC, "",
-	)
-	if err != nil {
-		return fmt.Errorf("make mounts private: %w", err)
-	}
-
-	if err := setUpFS(lowerDir); err != nil {
-		return fmt.Errorf("init fs: %w", err)
-	}
-
-	err = syscall.Mount("proc", "/proc", "proc", 0, "")
-	if err != nil {
-		return fmt.Errorf("mount /proc: %w", err)
-	}
-
-	if err = syscall.Sethostname([]byte(hostname)); err != nil {
-		return fmt.Errorf("sethostname: %w", err)
-	}
-
-	exe, err := exec.LookPath(args[0])
-	if err != nil {
-		return err
-	}
-
-	err = syscall.Exec(exe, args, os.Environ())
-	if err != nil {
-		return fmt.Errorf("exec %s: %w", exe, err)
-	}
-
-	return nil
-}
-
-func setUpFS(lowerDir string) error {
+func setupRootFS(lowerDir string) error {
 	lowerDir, err := filepath.Abs(lowerDir)
 	if err != nil {
 		return fmt.Errorf("abs lowerdir: %w", err)

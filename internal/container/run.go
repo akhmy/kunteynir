@@ -33,7 +33,7 @@ func Run(lowerDir, hostname string, args, env []string) error {
 	}
 	defer r.Close()
 
-	args = append([]string{"init", "-name", hostname, lowerDir}, args...)
+	args = append([]string{"setup", "-name", hostname, lowerDir}, args...)
 
 	cmd := exec.Command("/proc/self/exe", args...)
 	cmd.Stdin = os.Stdin
