@@ -8,6 +8,9 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+	"uuid"
+
+	"github.com/akhmy/kunteynir/internal/container/cgroup"
 )
 
 type InitError struct {
@@ -27,6 +30,26 @@ func (e *ExitError) Error() string {
 }
 
 func Run(lowerDir, hostname string, args, env []string) error {
+	cg, err := cgroup.New(uuid.New().String())
+	if err != nil {
+		return fmt.Errorf("create cgroup: %w", err)
+	}
+
+	defer cg.Kill()
+	defer cg.Cleanup()
+
+	if err := cg.SetMaxMemory("64m"); err != nil {
+		return err
+	}
+
+	if err := cg.SetMaxCPU(0.5); err != nil {
+		return err
+	}
+
+	if err := cg.SetMaxPids("20"); err != nil {
+		return err
+	}
+
 	r, w, err := os.Pipe()
 	if err != nil {
 		return fmt.Errorf("create init error pipe: %w", err)
@@ -34,6 +57,13 @@ func Run(lowerDir, hostname string, args, env []string) error {
 	defer r.Close()
 
 	args = append([]string{"setup", "-name", hostname, lowerDir}, args...)
+
+	dir, err := os.Open(cg.Path)
+	if err != nil {
+		return fmt.Errorf("open cgroup: %w", err)
+	}
+
+	defer dir.Close()
 
 	cmd := exec.Command("/proc/self/exe", args...)
 	cmd.Stdin = os.Stdin
@@ -45,6 +75,8 @@ func Run(lowerDir, hostname string, args, env []string) error {
 			syscall.CLONE_NEWPID |
 			syscall.CLONE_NEWNS |
 			syscall.CLONE_NEWIPC,
+		UseCgroupFD: true,
+		CgroupFD:    int(dir.Fd()),
 	}
 	cmd.ExtraFiles = append(cmd.ExtraFiles, w)
 
