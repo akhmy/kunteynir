@@ -18,6 +18,8 @@ func Setup(lowerDir, hostname string, args []string) error {
 		return fmt.Errorf("set hostname: %w", err)
 	}
 
+	fmt.Println(args)
+
 	arg0, err := exec.LookPath(args[0])
 	if err != nil {
 		return err

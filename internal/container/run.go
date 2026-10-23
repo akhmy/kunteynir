@@ -29,24 +29,24 @@ func (e *ExitError) Error() string {
 	return fmt.Sprintf("container exited with status %d", e.Code)
 }
 
-func Run(lowerDir, hostname string, args, env []string) error {
+func Run(lowerDir, hostname string, args, env []string, memory string, pids int, cpus float64) error {
 	cg, err := cgroup.New(uuid.New().String())
 	if err != nil {
 		return fmt.Errorf("create cgroup: %w", err)
 	}
 
-	defer cg.Kill()
 	defer cg.Cleanup()
+	defer cg.Kill()
 
-	if err := cg.SetMaxMemory("64m"); err != nil {
+	if err := cg.SetMaxMemory(memory); err != nil {
 		return err
 	}
 
-	if err := cg.SetMaxCPU(0.5); err != nil {
+	if err := cg.SetMaxCPU(cpus); err != nil {
 		return err
 	}
 
-	if err := cg.SetMaxPids("20"); err != nil {
+	if err := cg.SetMaxPids(pids); err != nil {
 		return err
 	}
 
@@ -56,7 +56,13 @@ func Run(lowerDir, hostname string, args, env []string) error {
 	}
 	defer r.Close()
 
-	args = append([]string{"setup", "-name", hostname, lowerDir}, args...)
+	fmt.Println(args)
+
+	args = append([]string{
+		"setup",
+		"-name", hostname,
+		lowerDir,
+	}, args...)
 
 	dir, err := os.Open(cg.Path)
 	if err != nil {

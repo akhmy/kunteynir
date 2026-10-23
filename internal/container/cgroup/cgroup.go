@@ -45,17 +45,36 @@ func New(name string) (*Cgroup, error) {
 }
 
 func (cg *Cgroup) SetMaxMemory(value string) error {
+	if value == "" {
+		value = "max"
+	}
+
 	return cg.writeLimit("memory.max", value)
 }
 
-func (cg *Cgroup) SetMaxPids(value string) error {
-	return cg.writeLimit("pids.max", value)
+func (cg *Cgroup) SetMaxPids(value int) error {
+	var str string
+
+	if value == -1 {
+		str = "max"
+	} else {
+		str = strconv.Itoa(value)
+	}
+
+	return cg.writeLimit("pids.max", str)
 }
 
 const cpuPeriod = 100_000
 
 func (cg *Cgroup) SetMaxCPU(quota float64) error {
-	return cg.writeLimit("cpu.max", strconv.Itoa(int(math.Round(quota*cpuPeriod))))
+	var str string
+	if quota == -1 {
+		str = "max"
+	} else {
+		str = strconv.Itoa(int(math.Round(quota * cpuPeriod)))
+	}
+
+	return cg.writeLimit("cpu.max", str)
 }
 
 func (cg *Cgroup) writeLimit(name, value string) error {
@@ -71,7 +90,7 @@ const cleanupRetries = 5
 
 const cooldown = time.Millisecond * 10
 
-var ErrX = errors.New("x")
+var ErrCgroupBusy = errors.New("cgroup still busy after " + strconv.Itoa(cleanupRetries) + " retries")
 
 func (cg *Cgroup) Cleanup() error {
 	for range cleanupRetries {
@@ -86,7 +105,7 @@ func (cg *Cgroup) Cleanup() error {
 		time.Sleep(cooldown)
 	}
 
-	return ErrX
+	return ErrCgroupBusy
 }
 
 func (cg *Cgroup) Kill() error {

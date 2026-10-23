@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/akhmy/kunteynir/internal/container"
@@ -22,7 +23,9 @@ func NewSetupCommand(args []string) (*SetupCommand, error) {
 	fs := flag.NewFlagSet("setup", flag.ContinueOnError)
 	hostname := fs.String("name", "default_name", "usage placeholder")
 
-	fs.Parse(args)
+	if err := fs.Parse(args); err != nil {
+		return nil, fmt.Errorf("parse args: %w", err)
+	}
 
 	args = fs.Args()
 
